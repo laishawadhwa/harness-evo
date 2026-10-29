@@ -181,38 +181,7 @@ PR check hardening:
   persisted git token before running PR code, and treats a failed comment post on a fork PR as
   non-fatal.
 
-## What's left to do
 
-The software for every loop is built and tested. These spec acceptance criteria still need real usage:
-
-1. Two weeks of shadow-mode traces on real work. `validate-trace` checks schema conformance.
-2. Labels on real PRs, so that `calibrate` can promote three detectors.
-3. A real corpus of 20 to 50 validated tasks. `evals/suites/` is empty apart from its README.
-4. 30 or more human labels per model grader before any of them may influence a verdict. Until then the
-   model graders are informational.
-5. A first real experiment and a nudge on/off run. The tooling for both exists; the experiment
-   behaviour tests use the scripted agent.
-
-Small pieces of the spec that are not built yet:
-
-- **Re-scoring.** There is no `rescore` command to re-grade stored results when a grader's version
-  changes. Every result is stamped with its grader versions, and `compare` reports whether the two
-  runs used the same ones.
-- **Model-grader agreement.** Agreement with human labels is not computed by any command. It is
-  entered by hand in `evals/graders/model/calibration.json`.
-- **Smoke suite in CI.** The workflow marks a harness-change PR and points to
-  `harness-evo experiment run`. It does not run the smoke suite itself, because that needs agent
-  credentials inside the sandbox.
-- **`ab-report` outcomes.** It compares the test-after-edit rate, rework and unsupported claims.
-  It does not yet compare PR-report outcomes between arms.
-- **Self-test CI.** This repo has no CI of its own yet, so the redaction tests with seeded fake
-  secrets run under pytest, not on every push.
-
-These parts have not been exercised end to end here:
-
-- The model-grader API call (no API access during the build; covered by tests with a fake client).
-- `CommandAgent` driving a real `claude -p` run.
-- The docker sandbox, which ships without an egress allow-list proxy.
 
 ## Development
 
