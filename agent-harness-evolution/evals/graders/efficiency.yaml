@@ -1,0 +1,6 @@
+# Efficiency budgets per task (spec section 8): `efficiency: {max_tool_calls: 60, max_cost_usd: 1.5}`.
+# Over-budget runs carry the signal efficiency:<budget> into diagnosis (cluster inefficient-loops).
+version: "1"
+budgets:
+  max_tool_calls: "tool_call events in the trace"
+  max_cost_usd: "from the agent's reported cost, else transcript token usage x config/pricing.yaml"

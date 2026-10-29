@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+*.egg-info/
+.harness-evo/traces/
+.harness-evo/state/
+.harness-evo/logs/
+.harness-evo/sessions/
+.harness-evo/cache/
+.harness-evo/queue/
+.harness-evo/bundles/
+runs/

@@ -1,0 +1,71 @@
+{
+  "name": "harness-evo",
+  "displayName": "Agent Harness Evolution",
+  "version": "0.2.0",
+  "description": "Watches a coding agent while it works: nudges good habits, gates unverified stops, blocks destructive actions, grades PRs on code and trace, and measures harness changes against a baseline.",
+  "author": {
+    "name": "harness-evo maintainers"
+  },
+  "keywords": [
+    "evals",
+    "agent-quality",
+    "hooks",
+    "code-review",
+    "verification",
+    "harness"
+  ],
+  "userConfig": {
+    "strictness": {
+      "type": "string",
+      "title": "Strictness",
+      "description": "observe: log only, never block. standard: gate unverified stops and deny destructive actions; other detectors log only until proven. strict: every detector at its full level.",
+      "default": "standard",
+      "options": [
+        "observe",
+        "standard",
+        "strict"
+      ]
+    },
+    "prompt_mode": {
+      "type": "string",
+      "title": "Prompt storage",
+      "description": "text: store prompts (redacted). hash: store only a SHA-256 of each prompt.",
+      "default": "text",
+      "options": [
+        "text",
+        "hash"
+      ]
+    },
+    "retention_days": {
+      "type": "number",
+      "title": "Trace retention (days)",
+      "description": "Delete traces and session data older than this.",
+      "default": 30,
+      "min": 1,
+      "max": 365
+    },
+    "pii_patterns": {
+      "type": "string",
+      "title": "Extra PII patterns",
+      "description": "Regular expressions redacted from traces before they are written, in addition to built-in secret patterns.",
+      "multiple": true,
+      "required": false
+    },
+    "trace_location": {
+      "type": "string",
+      "title": "Where traces live",
+      "description": "repo: under <repo>/.harness-evo (needed for the PR check in CI). user: in your own data directory, so nothing is written into the repo.",
+      "default": "repo",
+      "options": [
+        "repo",
+        "user"
+      ]
+    },
+    "nudge_ab": {
+      "type": "boolean",
+      "title": "Join the nudge A/B experiment",
+      "description": "Assign each session to nudges on or off by a hash of its id, to measure whether nudging helps.",
+      "default": false
+    }
+  }
+}

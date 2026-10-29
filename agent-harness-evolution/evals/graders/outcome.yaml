@@ -1,0 +1,23 @@
+# Deterministic outcome graders (spec section 8). Trust level: can gate.
+# Versions are stamped on every stored result; bump a version when its logic changes and
+# re-score old results before comparing across the change.
+graders:
+  tests_pass:
+    version: "1"
+    gating: true
+    task_usage: "tests_pass: {paths: [tests/billing], command: 'python -m pytest -q {paths}'}"
+    pr_usage: "runs the test_map commands for changed and impacted modules"
+  changed_files_within:
+    version: "1"
+    task_usage: "changed_files_within: ['src/billing/**']"
+  command:
+    version: "1"
+    task_usage: "command: {run: 'make check', expect_exit: 0}"
+  lint:        {version: "1", gating: "per command (lint_commands[].gating)"}
+  typecheck:   {version: "1", gating: "per command (typecheck_commands[].gating)"}
+  secret_in_diff:   {version: "1", gating: true, note: "high-confidence patterns only; findings never echo the secret"}
+  protected_path:   {version: "1", gating: true}
+  generated_files:  {version: "1"}
+  test_weakening:   {version: "1", note: "same analysis as detector D6, run on the diff"}
+  unrelated_changes: {version: "1", note: "against the scope of the stated task (PR title/body or session prompts)"}
+  diff_size:        {version: "1"}

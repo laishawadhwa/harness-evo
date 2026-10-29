@@ -1,0 +1,11 @@
+id: convention_fit
+version: 1
+model: claude-opus-5-5
+effort: medium
+max_tokens: 4000
+question: >
+  Decide whether the change is consistent with the conventions of the code it touches.
+rubric: |
+  Compare the added code with the code around it in the diff context: naming, error handling,
+  logging, comment density, test style, file layout and idioms. Flag clear departures that a
+  reviewer would ask to change. Do not flag style a formatter would fix, or a departure the task asks for.

@@ -1,0 +1,131 @@
+# harness-evo PR check (spec section 7). Copy to .github/workflows/harness-evo-pr-check.yml.
+#
+# Grades every PR on its code and, when commits carry a Harness-Session trailer, on the agent
+# sessions that produced it. Only deterministic outcome and safety failures fail the check
+# (failing tests, secrets in the diff, protected paths, destructive actions that ran).
+# Trajectory and model findings are advisory.
+#
+# Trace transport: developers run `harness-evo bundle --base origin/main --push`, which pushes
+# redacted traces to refs/harness-evo/sessions/<id>. This job fetches them, and archives what it
+# used as a 30-day artifact.
+name: harness-evo PR check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: harness-evo-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  pr-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # How to install harness-evo. Required, and pinned: e.g.
+      #   "harness-evo==0.2.0 --index-url https://<your package index>/simple"
+      #   "git+https://github.com/<org>/<repo>@<commit sha>"
+      # There is deliberately no default: an unpinned name could resolve to a public package.
+      HARNESS_EVO_SPEC: ${{ vars.HARNESS_EVO_SPEC }}
+      BASE_REF: origin/${{ github.base_ref }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      # PR text goes through env vars, never inline expressions, to avoid shell injection.
+      PR_TITLE: ${{ github.event.pull_request.title }}
+      PR_BODY: ${{ github.event.pull_request.body }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install harness-evo
+        run: |
+          if [ -z "$HARNESS_EVO_SPEC" ]; then
+            echo "::error::Set the HARNESS_EVO_SPEC repository variable to a pinned harness-evo package spec."
+            exit 1
+          fi
+          pip install $HARNESS_EVO_SPEC
+
+      - name: Fetch trace bundles
+        run: harness-evo fetch-bundles --base "$BASE_REF" --head HEAD --out-dir .harness-evo/ci-traces || true
+
+      - name: Drop the persisted git credentials before running PR code
+        run: git config --local --unset-all "http.https://github.com/.extraheader" || true
+
+      - name: Fetch the previous report comment (ticked labels carry over)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh api --paginate "repos/$REPO/issues/$PR_NUMBER/comments" \
+            --jq '.[] | select(.user.login == "github-actions[bot]") | select(.body | startswith("<!-- harness-evo-report -->")) | .body' \
+            > previous-comment.md || true
+
+      - name: Run pr-check
+        id: check
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.HARNESS_EVO_ANTHROPIC_API_KEY }}
+        run: |
+          set +e
+          MODEL_FLAG=""
+          if [ -n "${ANTHROPIC_API_KEY:-}" ] && [ "${{ vars.HARNESS_EVO_MODEL_GRADER }}" = "true" ]; then
+            pip install "anthropic>=0.40" >/dev/null
+            MODEL_FLAG="--model-grader --budget-usd ${{ vars.HARNESS_EVO_MODEL_BUDGET_USD || '0.50' }}"
+          fi
+          harness-evo pr-check --base "$BASE_REF" --head HEAD \
+            --traces .harness-evo/ci-traces \
+            --task "$PR_TITLE
+          $PR_BODY" \
+            --previous-comment previous-comment.md \
+            --json-out pr-check.json --md-out pr-check.md $MODEL_FLAG
+          echo "rc=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Post or update the report comment
+        if: always() && hashFiles('pr-check.md') != ''
+        # Fork PRs get a read-only token: the comment cannot be posted, and that must not fail the check.
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          id=$(gh api --paginate "repos/$REPO/issues/$PR_NUMBER/comments" \
+                 --jq '.[] | select(.user.login == "github-actions[bot]") | select(.body | startswith("<!-- harness-evo-report -->")) | .id' | tail -n 1)
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/$REPO/issues/comments/$id" -F body=@pr-check.md >/dev/null
+          else
+            gh api -X POST "repos/$REPO/issues/$PR_NUMBER/comments" -F body=@pr-check.md >/dev/null
+          fi
+
+      - name: Archive result and redacted traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: harness-evo-pr-${{ github.event.pull_request.number }}
+          path: |
+            pr-check.json
+            pr-check.md
+            .harness-evo/ci-traces/
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Fail on deterministic findings only
+        if: always()
+        run: |
+          if [ ! -f pr-check.json ]; then
+            echo "::error::pr-check did not produce a result (exit ${{ steps.check.outputs.rc }}); see the Run pr-check step."
+            exit 1
+          fi
+          code=$(python -c "import json; print(json.load(open('pr-check.json'))['exit_code'])")
+          if [ "$code" != "0" ]; then
+            echo "pr-check found a failing test, a secret, a protected path or a destructive action."
+            exit 1
+          fi

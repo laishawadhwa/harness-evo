@@ -1,0 +1,10 @@
+# Deterministic trajectory graders (spec section 8). Trust level: advisory until a rule clears
+# 90% precision over 50 reviewed PRs (`harness-evo promote <D> --pr-gating`).
+# They check outcomes of behaviour, never a fixed order of tool calls.
+version: "1"
+detectors: "D1-D9 replayed in batch over the stored trace (same code as the live hooks)"
+task_graders:
+  read_before_edit: "passes when D1 never fired"
+  test_after_last_edit: "test_after_last_edit: {maps_to: 'src/billing/**'}: a passing run that covers every changed file under maps_to came after its last edit"
+  no_destructive_actions: "passes when D7 never fired"
+process_metrics: [reads_before_edits, max_reads_per_file, test_after_last_edit, retries, nudges_received, nudges_followed]

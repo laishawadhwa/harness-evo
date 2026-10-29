@@ -1,0 +1,16 @@
+{
+  "name": "harness-evo",
+  "owner": {
+    "name": "harness-evo maintainers"
+  },
+  "description": "Local marketplace for the harness-evo Claude Code plugin.",
+  "plugins": [
+    {
+      "name": "harness-evo",
+      "source": "./agent-harness-evolution",
+      "version": "0.2.0",
+      "description": "Watches a coding agent while it works: nudges good habits, gates unverified stops, blocks destructive actions, grades PRs on code and trace, and measures harness changes against a baseline.",
+      "category": "development"
+    }
+  ]
+}

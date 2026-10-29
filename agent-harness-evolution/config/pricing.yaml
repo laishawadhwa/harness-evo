@@ -1,0 +1,16 @@
+# USD per million tokens, used for session and model-grader cost estimates.
+# Source: Anthropic first-party API list prices as cached 2026-10-06. Re-check against
+# https://platform.claude.com/docs/en/about-claude/pricing before relying on the numbers.
+# cache_write defaults to 1.25 x input (5-minute TTL) and cache_read to 0.1 x input when omitted.
+# Models are matched by prefix, longest first.
+models:
+  claude-fable-5-1:  {input: 10.00, output: 50.00, cache_read: 0.25}
+  claude-fable-5:    {input: 10.00, output: 50.00}
+  claude-opus-5-5:   {input: 4.00,  output: 20.00, cache_read: 0.20}
+  claude-opus-5:     {input: 5.00,  output: 25.00}
+  claude-opus-4:     {input: 5.00,  output: 25.00}
+  claude-sonnet-5-5: {input: 2.00,  output: 10.00, cache_read: 0.20}
+  claude-sonnet-5:   {input: 2.00,  output: 10.00}
+  claude-sonnet-4-6: {input: 3.00,  output: 15.00}
+  claude-haiku-5-5:  {input: 0.10,  output: 0.50}   # prompts up to 100K tokens; $0.50 / $2.50 beyond
+  claude-haiku-4-5:  {input: 1.00,  output: 5.00}

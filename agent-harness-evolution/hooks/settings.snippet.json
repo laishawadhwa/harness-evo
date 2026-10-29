@@ -1,0 +1,13 @@
+{
+  "hooks": {
+    "SessionStart": [{"hooks": [{"type": "command", "command": "__HOOK_COMMAND__ SessionStart", "timeout": 10}]}],
+    "UserPromptSubmit": [{"hooks": [{"type": "command", "command": "__HOOK_COMMAND__ UserPromptSubmit", "timeout": 10}]}],
+    "PreToolUse": [{"matcher": "*", "hooks": [{"type": "command", "command": "__HOOK_COMMAND__ PreToolUse", "timeout": 10}]}],
+    "PostToolUse": [{"matcher": "*", "hooks": [{"type": "command", "command": "__HOOK_COMMAND__ PostToolUse", "timeout": 10}]}],
+    "PostToolUseFailure": [{"matcher": "*", "hooks": [{"type": "command", "command": "__HOOK_COMMAND__ PostToolUseFailure", "timeout": 10}]}],
+    "Stop": [{"hooks": [{"type": "command", "command": "__HOOK_COMMAND__ Stop", "timeout": 10}]}],
+    "SubagentStop": [{"hooks": [{"type": "command", "command": "__HOOK_COMMAND__ SubagentStop", "timeout": 10}]}],
+    "PreCompact": [{"matcher": "*", "hooks": [{"type": "command", "command": "__HOOK_COMMAND__ PreCompact", "timeout": 10}]}],
+    "SessionEnd": [{"hooks": [{"type": "command", "command": "__HOOK_COMMAND__ SessionEnd", "timeout": 5}]}]
+  }
+}

@@ -1,0 +1,18 @@
+#!/bin/sh
+# harness-evo: tag commits made by the agent with a Harness-Session trailer (spec section 4).
+# Installed by `harness-evo install` or `harness-evo init --git-hook`. Only commits run from Claude Code
+# (CLAUDECODE=1) are tagged. Agent commits run in the Bash tool, where the plugin's harness-evo is on PATH.
+[ "${CLAUDECODE:-}" = "1" ] || exit 0
+case "${2:-}" in merge|squash) exit 0 ;; esac
+root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+sid=""
+if command -v harness-evo >/dev/null 2>&1; then
+  sid=$(harness-evo active-session --repo "$root" 2>/dev/null | head -n 1)
+fi
+if [ -z "$sid" ] && [ -f "$root/.harness-evo/state/active-session" ]; then
+  sid=$(head -n 1 "$root/.harness-evo/state/active-session")
+fi
+sid=$(printf '%s' "$sid" | tr -cd 'A-Za-z0-9._-')
+[ -n "$sid" ] || exit 0
+git interpret-trailers --in-place --if-exists addIfDifferent --trailer "Harness-Session: $sid" "$1" 2>/dev/null || true
+exit 0

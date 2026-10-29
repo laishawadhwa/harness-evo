@@ -1,0 +1,142 @@
+# Repo profile for harness-evo. Copy to <repo>/.harness-evo/profile.yaml and edit.
+# Every key is optional: anything left out falls back to the value in this file.
+# Lists replace (they do not append to) the defaults.
+version: 1
+
+# Files that count as code. A change to one of these needs a relevant test run
+# before the agent stops (detector D4).
+code_globs:
+  - "**/*.py"
+  - "**/*.{ts,tsx,js,jsx,mjs,cjs}"
+  - "**/*.{go,rs,java,kt,kts,scala,rb,php,cs,swift,c,cc,cpp,h,hpp,m,sql,sh}"
+
+# Files that are tests. Edits here are checked for weakening (D6).
+test_globs:
+  - "tests/**"
+  - "test/**"
+  - "**/test_*.py"
+  - "**/*_test.py"
+  - "**/*_test.go"
+  - "**/*.{test,spec}.{ts,tsx,js,jsx}"
+  - "**/__tests__/**"
+  - "**/src/test/**"
+
+# Paths where three edits without a test run earn a nudge (D3), e.g. "src/billing/**".
+risky_paths: []
+
+# Writes here are denied (D7), and a PR that touches them fails the check.
+protected_paths: []
+
+# Secret files: writes are denied (D7).
+secret_paths:
+  - ".env"
+  - ".env.*"
+  - "**/*.pem"
+  - "**/*.key"
+  - "**/id_rsa*"
+  - "**/secrets/**"
+  - "**/.aws/credentials"
+
+# Committed build output, flagged by the PR check.
+generated_globs:
+  - "**/__pycache__/**"
+  - "**/*.pyc"
+  - "**/node_modules/**"
+  - "**/.DS_Store"
+  - "dist/**"
+  - "build/**"
+  - "coverage/**"
+  - "**/*.min.js"
+
+# Paths that make a PR a harness-change PR (it routes to the experiment workflow).
+harness_paths:
+  - ".harness-evo/profile.yaml"
+  - ".harness-evo/nudge-policy.yaml"
+  - ".harness-evo/mutes.json"
+  - ".claude/**"
+  - "CLAUDE.md"
+  - "**/CLAUDE.md"
+  - "AGENTS.md"
+  - ".mcp.json"
+  - "agent-harness-evolution/**"
+
+# Regexes that recognise a test run in a Bash command (harnesses do not label them). A match counts only
+# if the program actually run is a test runner, and not with --version, --help or --collect-only.
+test_commands:
+  - '(^|[;&|(]\s*)(\S*/)?(python[0-9.]* -m )?(\S*/)?pytest\b'   # also .venv/bin/python -m pytest, /usr/bin/python3 -m pytest
+  - '(^|[;&|(]\s*)(npm|pnpm|yarn|bun)( run)? test\b'
+  - '(^|[;&|(]\s*)(npx )?(jest|vitest|mocha)\b'
+  - '(^|[;&|(]\s*)go test\b'
+  - '(^|[;&|(]\s*)cargo test\b'
+  - '(^|[;&|(]\s*)(\./)?(gradlew|mvn|mvnw)\b.*\btest\b'
+  - '(^|[;&|(]\s*)(bundle exec )?rspec\b'
+  - '(^|[;&|(]\s*)make (test|check)\b'
+
+# Test-to-module map. A test run counts as relevant to a changed file only if
+# the run's targets match the `tests` globs of a group whose `source` matches
+# the file. A run with no targets and no filter (the whole suite) covers everything.
+#   - name: billing
+#     source: ["src/billing/**"]
+#     tests: ["tests/billing/**"]
+#     command: "pytest tests/billing"
+#     depends_on: []          # names of groups whose changes impact this one
+test_map: []
+
+# Commands the PR check runs on top of the mapped tests.
+lint_commands: []        # - {name: ruff, command: "ruff check ."}
+typecheck_commands: []   # - {name: mypy, command: "mypy src"}
+
+# Detector thresholds, and per-task-type overrides (task type is guessed from the prompt:
+# bug_fix | feature | refactor | config).
+thresholds:
+  D2: {repeat: 3, escalate: 5}
+  D3: {edits: 3}
+  D8: {edits: 5, window_s: 600}
+  D9: {min_files: 2, churn_edits: 4, churn_share: 0.5}
+task_type_thresholds:
+  refactor:
+    D3: {edits: 5}
+    D9: {min_files: 4}
+  config:
+    D3: {edits: 5}
+
+# Destructive-action rules (D7). `allow` lists rm -rf targets that are safe to delete.
+destructive:
+  extra_patterns: []     # extra regexes, each denied when matched
+  allow:
+    - "node_modules"
+    - "dist"
+    - "build"
+    - ".pytest_cache"
+    - "__pycache__"
+    - ".mypy_cache"
+    - ".ruff_cache"
+    - "coverage"
+    - ".coverage"
+    - ".tox"
+    - ".next"
+    - "target"
+    - "/tmp/*"
+    - "*.pyc"
+    - "*.pyo"
+    - ".DS_Store"
+
+# Success claims checked against the trace at stop time (D5). Test claims are always checked.
+# General claims are checked only when code changed in the session, or when nothing changed at all
+# ("Fixed the README typo" after a docs-only edit is not a claim about tests).
+claims:
+  test_patterns:
+    - '\ball (?:of )?(?:the )?(?:\w+ )?tests? (?:now |are |still )?(?:pass|passes|passed|passing|green)\b'
+    - '\btests? (?:now |all |are |still )?(?:pass|passes|passed|passing)\b'
+  patterns:
+    - '\b(?:fixed|resolved)\b'
+    - '\bverified\b'
+    - '\b(?:works|working) (?:now|correctly|as expected)\b'
+
+privacy:
+  prompt_mode: text      # text | hash (store only a SHA-256 of each prompt)
+  retention_days: 30
+  pii_patterns: []       # extra regexes redacted before an event is written
+
+# Optional: queue a local eval when a session ends.
+queue_eval_on_end: false

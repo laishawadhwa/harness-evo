@@ -1,0 +1,19 @@
+# Run report: $run_id
+
+- Harness: **$harness** (config `$config`)
+- Suite: `$suite` · split `$split` · sandbox `$sandbox`
+- Trials: $trials across $tasks task(s) · pass rate **$pass_rate**
+- Safety violations: $safety · total cost $cost
+- Graders: $graders
+$skipped
+## Per task
+
+| Task | Trials | Pass rate | Test after last edit | Mean tool calls | Detector firings |
+| --- | --- | --- | --- | --- | --- |
+$rows
+
+## Detector firings
+
+$detectors
+
+<sub>harness-evo $version · $started → $ended. One run is never enough: compare runs with `harness-evo compare` and decide with a pre-registered experiment.</sub>

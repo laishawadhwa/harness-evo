@@ -1,0 +1,3 @@
+{
+  "_comment": "Per grader: {version, runs, agreement}. A model grader influences a verdict only when runs >= 30 and agreement >= 0.80 for its current version. Re-score after any prompt or model change."
+}

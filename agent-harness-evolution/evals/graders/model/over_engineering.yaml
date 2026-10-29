@@ -1,0 +1,14 @@
+id: over_engineering
+version: 1
+model: claude-opus-5-5
+effort: medium
+max_tokens: 4000
+question: >
+  Decide whether this change is over-engineered for the stated task.
+rubric: |
+  Flag only when the diff adds structure the task does not need, for example: new abstractions,
+  layers, configuration or extension points with a single caller; speculative generality;
+  framework-style indirection for a small fix; or a diff several times larger than the task requires.
+  Do not flag structure the task explicitly asks for, or that the surrounding code already uses.
+  severity: high when the extra structure would need to be removed before merge, medium when it
+  should be simplified, low when it is a matter of taste.

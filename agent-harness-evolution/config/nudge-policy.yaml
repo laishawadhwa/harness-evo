@@ -1,0 +1,57 @@
+# Nudge policy. Override per repo in <repo>/.harness-evo/nudge-policy.yaml (deep-merged).
+# Calibration results (`harness-evo calibrate --apply`, `harness-evo promote`) are written to
+# .harness-evo/policy-state.json and take precedence over both files.
+version: 1
+
+# info: logged only. advise: context note after the call. gate: blocks the stop once.
+# deny: blocks the tool call.
+levels: [info, advise, gate, deny]
+
+caps:
+  per_turn: 1        # advisory nudges per user-prompt cycle (gates and denies are exempt)
+  per_session: 5
+
+adherence_window: 3  # actions after a nudge that are checked for compliance
+
+demotion:  {window: 50, precision_floor: 0.70}
+promotion: {window: 50, precision_bar: 0.70}
+pr_gating: {window: 50, precision_bar: 0.90, rules: []}   # trajectory rules promoted to CI gating
+
+experiment:
+  nudge_ab: false    # true: sessions split by hash(session id) into nudges on / off
+
+# `level` is the level in force. `target_level` is where the detector is promoted to once it
+# clears the precision bar. New detectors start at info (shadow mode).
+detectors:
+  D1: {level: info,  target_level: advise}
+  D2: {level: info,  target_level: advise}
+  D3: {level: info,  target_level: advise}
+  D4: {level: gate,  target_level: gate}
+  D5: {level: gate,  target_level: gate}
+  D6: {level: info,  target_level: advise, flag_for_pr: true}
+  D7: {level: deny,  target_level: deny}
+  D8: {level: info,  target_level: advise}
+  D9: {level: info,  target_level: advise}
+
+wording:
+  prefix: "Harness note:"
+  contract:
+    - "Harness quality contract for this repo:"
+    - "- Read a file before you edit it, and run the tests that cover a change ({test_hint}) before you finish."
+    - "- Only say tests pass or a fix works when a test run in this session shows it."
+    - "- Destructive commands and protected paths are blocked; every other harness note is advice."
+  templates:
+    D1.unread: "{path} is being edited but has not been read in this session. Read it first so the edit matches its current content."
+    D1.changed: "{path} changed on disk since it was last read. Read it again before editing so the change applies to the current version."
+    D2.repeat: "{tool} has failed {count} times with the same error ({error}). Read the error and change the approach before retrying."
+    D2.escalate: "{tool} has now failed {count} times with the same error ({error}). Stop retrying and investigate the cause, or ask the user for help."
+    D3.never: "{path} has been edited {count} times and {tests} has not run in this session. Run those tests before the next change, or say why they do not apply."
+    D3.stale: "{path} has been edited {count} times since the last run of {tests}. Run those tests before the next change, or say why they do not apply."
+    D4.none: "Code changed in {files} but no test ran in this session. Run {tests} before finishing, or say why they do not apply."
+    D4.stale: "{files} changed after the last passing run of the tests that cover them. Run {tests} before finishing, or say why they do not apply."
+    D5.claim: "The final message says \"{claim}\" but no passing test that covers the change ran after the last edit. Run {tests} and cite the result, or reword the claim."
+    D6.weakened: "The edit to {path} {what}. Keep the test as strict as before unless the expected behaviour really changed, and say why if it did."
+    D7.blocked: "{what} is blocked by this repo's safety policy. Use a safer alternative or ask the user to run it."
+    D8.thrash: "{path} has been edited {count} times in {minutes} minutes and the change keeps flipping back. Decide on the end state before the next edit."
+    D9.scope: "{files} are outside the area this task is about ({scope}). Revert them or say why they are needed."
+    D9.churn: "{share}% of the recent edits only change formatting. Keep formatting changes out of this task unless they were asked for."

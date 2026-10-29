@@ -1,0 +1,33 @@
+#!/bin/sh
+# harness-evo launcher, used by the Claude Code plugin (and by any checkout of agent-harness-evolution/).
+# Runs the bundled package with vendored PyYAML on the import path, so nothing has to be pip-installed.
+# Hooks fail open: with no Python, `harness-evo hook ...` drains stdin and exits 0 so the agent proceeds.
+self=$0
+while [ -L "$self" ]; do  # follow symlinks (e.g. ~/.local/bin/harness-evo) back to the real launcher
+  link=$(readlink "$self") || break
+  case "$link" in /*) self=$link ;; *) self=${self%/*}/$link ;; esac
+done
+case "$self" in */*) here=${self%/*} ;; *) here=. ;; esac
+root=$(cd "$here/.." 2>/dev/null && pwd) || root="$here/.."
+scripts="$root/scripts"
+
+py=${HARNESS_EVO_PYTHON:-}
+if [ -z "$py" ]; then
+  for c in python3.14 python3.13 python3.12 python3.11 python3.10 python3.9 python3; do
+    if command -v "$c" >/dev/null 2>&1; then py=$c; break; fi
+  done
+fi
+
+if [ -z "$py" ]; then
+  if [ "${1:-}" = "hook" ]; then
+    cat >/dev/null 2>&1
+    exit 0
+  fi
+  echo "harness-evo: no Python 3.9+ found. Install one, or set HARNESS_EVO_PYTHON to its path." >&2
+  exit 1
+fi
+
+PYTHONPATH="$scripts:$scripts/harness_evo/_vendor${PYTHONPATH:+:$PYTHONPATH}"
+export PYTHONPATH
+# $py is unquoted on purpose: HARNESS_EVO_PYTHON may carry flags, e.g. "python3 -S".
+exec $py -m harness_evo "$@"

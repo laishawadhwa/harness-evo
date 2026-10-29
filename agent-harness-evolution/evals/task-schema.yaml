@@ -1,0 +1,33 @@
+# Eval task schema (spec section 8). A JSON Schema subset, checked by `harness-evo corpus validate`.
+type: object
+required: [id, source, split, status, repo, prompt, reference, graders]
+additionalProperties: false
+properties:
+  id: {type: string, pattern: "^[a-z0-9][a-z0-9._-]*$"}
+  source: {type: string, enum: [real_failure, regression, capability]}
+  split: {type: string, enum: [dev, heldout]}
+  status: {type: string, enum: [draft, validated, quarantined]}
+  risk: {type: string, enum: [low, medium, high]}
+  repo:
+    type: object
+    required: [url, commit]
+    properties:
+      url: {type: string}
+      commit: {type: string}
+  setup: {type: array, items: {type: string}}
+  prompt: {type: string, minLength: 1}
+  reference: {type: string, description: "patch that proves the task is solvable, relative to the task file"}
+  graders:
+    type: object
+    required: [outcome]
+    additionalProperties: false
+    properties:
+      outcome: {type: array, minItems: 1}
+      trajectory: {type: array}
+      efficiency:
+        type: object
+        properties:
+          max_tool_calls: {type: integer}
+          max_cost_usd: {type: number}
+  trials: {type: integer, minimum: 1}
+  notes: {type: string}
