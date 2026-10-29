@@ -1,6 +1,6 @@
 # harness-evo: Agent Harness Evolution
 
-An implementation of the *Agent Harness Evolution* design spec (Oct 25, 2026). The system:
+An implementation of the *Agent Harness Evolution* . The system:
 
 - watches a coding agent while it works,
 - nudges it toward good engineering habits in the moment,
